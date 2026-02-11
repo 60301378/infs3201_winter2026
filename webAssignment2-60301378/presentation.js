@@ -1,6 +1,10 @@
 const prompt = require('prompt-sync')()
 const business = require('./business')
 
+/**
+ * Displays all employees in a formatted table.
+ * @returns {Promise<void>}
+ */
 async function showEmployees() {
   const employees = await business.listEmployees()
 
@@ -16,6 +20,10 @@ async function showEmployees() {
   }
 }
 
+/**
+ * Prompts the user for employee info and adds the employee.
+ * @returns {Promise<void>}
+ */
 async function addEmployee() {
   const name = prompt('Enter employee name: ')
   const phone = prompt('Enter phone number: ')
@@ -23,6 +31,10 @@ async function addEmployee() {
   console.log('Employee added...')
 }
 
+/**
+ * Prompts the user for an employee ID and shift ID and assigns the shift.
+ * @returns {Promise<void>}
+ */
 async function assignShift() {
   const empId = prompt('Enter employee ID: ')
   const shiftId = prompt('Enter shift ID: ')
@@ -30,13 +42,19 @@ async function assignShift() {
   console.log(result.message)
 }
 
+/**
+ * Prompts the user for an employee ID and displays the schedule in CSV format.
+ * @returns {Promise<void>}
+ */
 async function viewSchedule() {
   const empId = prompt('Enter employee ID: ')
   const result = await business.getEmployeeSchedule(empId)
 
   console.log('date,startTime,endTime')
 
-  if (!result.exists) return
+  if (!result.exists) {
+    return
+  }
 
   for (let i = 0; i < result.rows.length; i++) {
     console.log(
@@ -47,6 +65,10 @@ async function viewSchedule() {
   }
 }
 
+/**
+ * Runs the main menu loop and calls the correct function based on the user's choice.
+ * @returns {Promise<void>}
+ */
 async function main() {
   while (true) {
     console.log('Options:')
@@ -56,7 +78,7 @@ async function main() {
     console.log('4. View employee schedule')
     console.log('5. Exit')
 
-    let selection = Number(prompt('Enter option: '))
+    const selection = Number(prompt('Enter option: '))
 
     if (selection === 1) await showEmployees()
     else if (selection === 2) await addEmployee()
