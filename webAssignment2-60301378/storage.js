@@ -1,7 +1,7 @@
 const fs = require('fs/promises')
 
 /**
- * Reads a JSON file.
+ * Reads a JSON file and parses it.
  * @param {string} fileName
  * @returns {Promise<any>}
  */
@@ -11,7 +11,7 @@ async function readJson(fileName) {
 }
 
 /**
- * Writes data to JSON file.
+ * Writes data into a JSON file.
  * @param {string} fileName
  * @param {any} data
  * @returns {Promise<void>}
@@ -21,51 +21,106 @@ async function writeJson(fileName, data) {
 }
 
 /**
- * Returns all employees.
- * @returns {Promise<Array>}
+ * Returns all employees (needed for listing + new ID generation).
+ * @returns {Promise<Array<{employeeId:string,name:string,phone:string}>>}
  */
-async function getEmployees() {
+async function getAllEmployees() {
   return await readJson('employees.json')
 }
 
 /**
- * Saves employees.
- * @param {Array} employees
+ * Finds one employee by ID.
+ * @param {string} empId
+ * @returns {Promise<{employeeId:string,name:string,phone:string}|null>}
+ */
+async function findEmployee(empId) {
+  const employees = await readJson('employees.json')
+  for (let i = 0; i < employees.length; i++) {
+    if (employees[i].employeeId === empId) return employees[i]
+  }
+  return null
+}
+
+/**
+ * Adds one employee.
+ * @param {{employeeId:string,name:string,phone:string}} employee
  * @returns {Promise<void>}
  */
-async function saveEmployees(employees) {
+async function addEmployee(employee) {
+  const employees = await readJson('employees.json')
+  employees.push(employee)
   await writeJson('employees.json', employees)
 }
 
 /**
- * Returns all shifts.
- * @returns {Promise<Array>}
+ * Finds one shift by ID.
+ * @param {string} shiftId
+ * @returns {Promise<{shiftId:string,date:string,startTime:string,endTime:string}|null>}
  */
-async function getShifts() {
-  return await readJson('shifts.json')
+async function findShift(shiftId) {
+  const shifts = await readJson('shifts.json')
+  for (let i = 0; i < shifts.length; i++) {
+    if (shifts[i].shiftId === shiftId) return shifts[i]
+  }
+  return null
 }
 
 /**
  * Returns all assignments.
- * @returns {Promise<Array>}
+ * @returns {Promise<Array<{employeeId:string,shiftId:string}>>}
  */
-async function getAssignments() {
+async function getAllAssignments() {
   return await readJson('assignments.json')
 }
 
 /**
- * Saves assignments.
- * @param {Array} assignments
+ * Returns assignments only for one employee.
+ * @param {string} empId
+ * @returns {Promise<Array<{employeeId:string,shiftId:string}>>}
+ */
+async function getAssignmentsForEmployee(empId) {
+  const assignments = await readJson('assignments.json')
+  const result = []
+  for (let i = 0; i < assignments.length; i++) {
+    if (assignments[i].employeeId === empId) result.push(assignments[i])
+  }
+  return result
+}
+
+/**
+ * Checks if an employee already has a specific shift.
+ * @param {string} empId
+ * @param {string} shiftId
+ * @returns {Promise<boolean>}
+ */
+async function assignmentExists(empId, shiftId) {
+  const assignments = await readJson('assignments.json')
+  for (let i = 0; i < assignments.length; i++) {
+    if (assignments[i].employeeId === empId && assignments[i].shiftId === shiftId) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Adds one assignment record.
+ * @param {{employeeId:string,shiftId:string}} assignment
  * @returns {Promise<void>}
  */
-async function saveAssignments(assignments) {
+async function addAssignment(assignment) {
+  const assignments = await readJson('assignments.json')
+  assignments.push(assignment)
   await writeJson('assignments.json', assignments)
 }
 
 module.exports = {
-  getEmployees,
-  saveEmployees,
-  getShifts,
-  getAssignments,
-  saveAssignments
+  getAllEmployees,
+  findEmployee,
+  addEmployee,
+  findShift,
+  getAllAssignments,
+  getAssignmentsForEmployee,
+  assignmentExists,
+  addAssignment
 }
