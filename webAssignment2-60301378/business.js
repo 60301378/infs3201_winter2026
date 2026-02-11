@@ -1,113 +1,87 @@
 const storage = require('./storage')
 
 /**
- * Returns all employees.
+ * Returns all employees for display.
  * @returns {Promise<Array>}
  */
 async function listEmployees() {
-  return await storage.getEmployees()
+  return await storage.getAllEmployees()
 }
 
 /**
- * Creates a new employee.
- * @param {string} name
- * @param {string} phone
- * @returns {Promise<void>}
+ * Creates the next employee ID like E001.
+ * @param {Array<{employeeId:string}>} employees
+ * @returns {string}
  */
-async function createEmployee(name, phone) {
-  const employees = await storage.getEmployees()
-
+function makeNextEmployeeId(employees) {
   let maxNumber = 0
   for (let i = 0; i < employees.length; i++) {
     const num = parseInt(employees[i].employeeId.substring(1))
     if (num > maxNumber) maxNumber = num
   }
-
   const newId = 'E' + String(maxNumber + 1).padStart(3, '0')
-
-  employees.push({
-    employeeId: newId,
-    name: name,
-    phone: phone
-  })
-
-  await storage.saveEmployees(employees)
+  return newId
 }
 
 /**
- * Assigns employee to shift (basic checks).
+ * Adds a new employee.
+ * @param {string} name
+ * @param {string} phone
+ * @returns {Promise<void>}
+ */
+async function createEmployee(name, phone) {
+  const employees = await storage.getAllEmployees()
+  const newId = makeNextEmployeeId(employees)
+
+  const employee = {
+    employeeId: newId,
+    name: name,
+    phone: phone
+  }
+
+  await storage.addEmployee(employee)
+}
+
+/**
+ * Assign employee to shift with checks.
  * @param {string} empId
  * @param {string} shiftId
  * @returns {Promise<{ok:boolean,message:string}>}
  */
 async function assignEmployeeToShift(empId, shiftId) {
-  const employees = await storage.getEmployees()
-  const shifts = await storage.getShifts()
-  const assignments = await storage.getAssignments()
+  const emp = await storage.findEmployee(empId)
+  if (!emp) return { ok: false, message: 'Employee does not exist' }
 
-  let empExists = false
-  for (let i = 0; i < employees.length; i++) {
-    if (employees[i].employeeId === empId) empExists = true
-  }
+  const shift = await storage.findShift(shiftId)
+  if (!shift) return { ok: false, message: 'Shift does not exist' }
 
-  if (!empExists) {
-    return { ok: false, message: 'Employee does not exist' }
-  }
+  const exists = await storage.assignmentExists(empId, shiftId)
+  if (exists) return { ok: false, message: 'Employee already assigned to shift' }
 
-  let shiftExists = false
-  for (let i = 0; i < shifts.length; i++) {
-    if (shifts[i].shiftId === shiftId) shiftExists = true
-  }
-
-  if (!shiftExists) {
-    return { ok: false, message: 'Shift does not exist' }
-  }
-
-  for (let i = 0; i < assignments.length; i++) {
-    if (assignments[i].employeeId === empId &&
-        assignments[i].shiftId === shiftId) {
-      return { ok: false, message: 'Employee already assigned to shift' }
-    }
-  }
-
-  assignments.push({ employeeId: empId, shiftId: shiftId })
-  await storage.saveAssignments(assignments)
-
+  await storage.addAssignment({ employeeId: empId, shiftId: shiftId })
   return { ok: true, message: 'Shift Recorded' }
 }
 
 /**
- * Returns schedule rows for employee.
+ * Builds schedule rows for one employee.
  * @param {string} empId
- * @returns {Promise<{exists:boolean,rows:Array}>}
+ * @returns {Promise<{exists:boolean,rows:Array<{date:string,startTime:string,endTime:string}>}>}
  */
 async function getEmployeeSchedule(empId) {
-  const employees = await storage.getEmployees()
-  const shifts = await storage.getShifts()
-  const assignments = await storage.getAssignments()
+  const emp = await storage.findEmployee(empId)
+  if (!emp) return { exists: false, rows: [] }
 
-  let empExists = false
-  for (let i = 0; i < employees.length; i++) {
-    if (employees[i].employeeId === empId) empExists = true
-  }
-
-  if (!empExists) {
-    return { exists: false, rows: [] }
-  }
-
+  const assignments = await storage.getAssignmentsForEmployee(empId)
   const rows = []
 
   for (let i = 0; i < assignments.length; i++) {
-    if (assignments[i].employeeId === empId) {
-      for (let j = 0; j < shifts.length; j++) {
-        if (shifts[j].shiftId === assignments[i].shiftId) {
-          rows.push({
-            date: shifts[j].date,
-            startTime: shifts[j].startTime,
-            endTime: shifts[j].endTime
-          })
-        }
-      }
+    const shift = await storage.findShift(assignments[i].shiftId)
+    if (shift) {
+      rows.push({
+        date: shift.date,
+        startTime: shift.startTime,
+        endTime: shift.endTime
+      })
     }
   }
 
