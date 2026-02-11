@@ -114,6 +114,15 @@ async function addAssignment(assignment) {
   await writeJson('assignments.json', assignments)
 }
 
+/**
+ * Loads configuration settings from config.json.
+ * @returns {Promise<{maxDailyHours:number}>}
+ */
+async function getConfig() {
+  return await readJson('config.json')
+}
+
+
 module.exports = {
   getAllEmployees,
   findEmployee,
@@ -122,5 +131,7 @@ module.exports = {
   getAllAssignments,
   getAssignmentsForEmployee,
   assignmentExists,
-  addAssignment
+  addAssignment.
+  getConfig
 }
+
