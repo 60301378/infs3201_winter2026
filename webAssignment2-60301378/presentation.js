@@ -39,26 +39,24 @@ async function assignShift() {
 }
 
 /**
- * Prompts the user for an employee ID and displays the schedule in CSV format.
+ * Displays employee schedule in table format.
  * @returns {Promise<void>}
  */
 async function viewSchedule() {
-  const empId = prompt('Enter employee ID: ')
+  const empId = prompt('Enter employee ID: ').trim().toUpperCase()
   const result = await business.getEmployeeSchedule(empId)
 
-  console.log('date,startTime,endTime')
-
   if (!result.exists) {
+    console.log('Employee does not exist.')
     return
   }
 
-  for (let i = 0; i < result.rows.length; i++) {
-    console.log(
-      result.rows[i].date + ',' +
-      result.rows[i].startTime + ',' +
-      result.rows[i].endTime
-    )
+  if (result.rows.length === 0) {
+    console.log('No shifts assigned.')
+    return
   }
+
+  console.table(result.rows)
 }
 
 /**
@@ -86,4 +84,5 @@ async function main() {
 }
 
 main()
+
 
