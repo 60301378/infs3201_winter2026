@@ -2,22 +2,18 @@ const prompt = require('prompt-sync')()
 const business = require('./business')
 
 /**
- * Displays all employees in a formatted table.
+ * Displays all employees in a table format.
  * @returns {Promise<void>}
  */
 async function showEmployees() {
   const employees = await business.listEmployees()
 
-  console.log('Employee ID Name                 Phone')
-  console.log('----------- -------------------- --------')
-
-  for (let i = 0; i < employees.length; i++) {
-    console.log(
-      employees[i].employeeId.padEnd(11) +
-      employees[i].name.padEnd(21) +
-      employees[i].phone
-    )
+  if (employees.length === 0) {
+    console.log('No employees found.')
+    return
   }
+
+  console.table(employees)
 }
 
 /**
@@ -90,3 +86,4 @@ async function main() {
 }
 
 main()
+
