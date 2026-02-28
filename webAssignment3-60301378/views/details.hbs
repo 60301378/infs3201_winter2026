@@ -1,0 +1,17 @@
+<h1>Schedule for {{empId}}</h1>
+
+<table border="1">
+  <tr>
+    <th>Date</th>
+    <th>Start</th>
+    <th>End</th>
+  </tr>
+
+  {{#each shifts}}
+    <tr>
+      <td>{{this.date}}</td>
+      <td>{{this.startTime}}</td>
+      <td>{{this.endTime}}</td>
+    </tr>
+  {{/each}}
+</table>
