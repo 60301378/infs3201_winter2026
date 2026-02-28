@@ -1,0 +1,16 @@
+{
+  "name": "infs3201_winter2026",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "presentation.js",
+  "dependencies": {
+    "prompt-sync": "^4.2.0"
+  },
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

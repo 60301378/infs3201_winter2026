@@ -1,0 +1,38 @@
+[
+    {
+        "employeeId": "E001",
+        "shiftId": "S001"
+    },
+    {
+        "employeeId": "E003",
+        "shiftId": "S004"
+    },
+    {
+        "employeeId": "E003",
+        "shiftId": "S007"
+    },
+    {
+        "employeeId": "E003",
+        "shiftId": "S008"
+    },
+    {
+        "employeeId": "E007",
+        "shiftId": "S010"
+    },
+    {
+        "employeeId": "E008",
+        "shiftId": "S005"
+    },
+    {
+        "employeeId": "E009",
+        "shiftId": "S001"
+    },
+    {
+        "employeeId": "E009",
+        "shiftId": "S010"
+    },
+    {
+        "employeeId": "E010",
+        "shiftId": "S010"
+    }
+]
