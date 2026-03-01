@@ -1,17 +1,30 @@
-<h1>Schedule for {{empId}}</h1>
+<link rel="stylesheet" href="/styles.css">
 
-<table border="1">
+<h1>Employee Details</h1>
+
+<p>Name: {{employee.name}}</p>
+<p>Phone: {{employee.phone}}</p>
+
+<a href="/employee/{{employee.employeeId}}/edit">Edit Details</a>
+<br><br>
+
+<h2>Shifts</h2>
+
+<table border="1" cellpadding="6">
   <tr>
     <th>Date</th>
-    <th>Start</th>
-    <th>End</th>
+    <th>Start Time</th>
+    <th>End Time</th>
   </tr>
 
   {{#each shifts}}
     <tr>
       <td>{{this.date}}</td>
-      <td>{{this.startTime}}</td>
+      <td class="{{#if this.morning}}morning{{/if}}">{{this.startTime}}</td>
       <td>{{this.endTime}}</td>
     </tr>
   {{/each}}
 </table>
+
+<br>
+<a href="/">Back</a>
