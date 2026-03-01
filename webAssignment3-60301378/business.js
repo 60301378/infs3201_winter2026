@@ -1,38 +1,17 @@
 const storage = require('./storage')
 
 /**
- * Computes shift duration in hours between two times.
- * LLM: ChatGPT
- * Prompt used: "Write a JavaScript function computeShiftDuration(startTime, endTime) that returns the number of hours (decimal) between two HH:MM times. Assume endTime is after startTime."
- * @param {string} startTime Time in HH:MM format
- * @param {string} endTime Time in HH:MM format
- * @returns {number} Number of hours worked
- */
-function computeShiftDuration(startTime, endTime) {
-  const startParts = startTime.split(':')
-  const endParts = endTime.split(':')
-
-  const startMinutes = Number(startParts[0]) * 60 + Number(startParts[1])
-  const endMinutes = Number(endParts[0]) * 60 + Number(endParts[1])
-
-  const diffMinutes = endMinutes - startMinutes
-
-  return diffMinutes / 60
-}
-
-
-/**
- * Returns all employees for display.
- * @returns {Promise<Array>}
+ * Retrieves all employees from persistence.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of employee objects.
  */
 async function listEmployees() {
   return await storage.getAllEmployees()
 }
 
 /**
- * Creates the next employee ID like E001.
- * @param {Array<{employeeId:string}>} employees
- * @returns {string}
+ * Generates the next available employee ID.
+ * @param {Array<Object>} employees - The list of existing employee objects.
+ * @returns {string} The next employee ID in the format 'E###'.
  */
 function makeNextEmployeeId(employees) {
   let maxNumber = 0
@@ -40,58 +19,101 @@ function makeNextEmployeeId(employees) {
     const num = parseInt(employees[i].employeeId.substring(1))
     if (num > maxNumber) maxNumber = num
   }
-  const newId = 'E' + String(maxNumber + 1).padStart(3, '0')
-  return newId
+  return 'E' + String(maxNumber + 1).padStart(3, '0')
 }
 
 /**
- * Adds a new employee.
- * @param {string} name
- * @param {string} phone
+ * Creates a new employee with the next available employee ID.
+ * @param {string} name - The employee name.
+ * @param {string} phone - The employee phone number.
  * @returns {Promise<void>}
  */
 async function createEmployee(name, phone) {
   const employees = await storage.getAllEmployees()
   const newId = makeNextEmployeeId(employees)
 
-  const employee = {
+  await storage.addEmployee({
     employeeId: newId,
     name: name,
     phone: phone
-  }
-
-  await storage.addEmployee(employee)
+  })
 }
 
 /**
- * Builds schedule rows for one employee.
- * @param {string} empId
- * @returns {Promise<{exists:boolean,rows:Array<{date:string,startTime:string,endTime:string}>}>}
+ * Retrieves a single employee by ID.
+ * @param {string} empId - The employee ID.
+ * @returns {Promise<Object|null>} The employee object or null if not found.
  */
-async function getEmployeeSchedule(empId) {
+async function getEmployee(empId) {
+  return await storage.findEmployee(empId)
+}
+
+/**
+ * Retrieves employee details along with sorted shifts.
+ * @param {string} empId - The employee ID.
+ * @returns {Promise<{exists: boolean, employee: Object|null, shifts: Array<Object>}>}
+ */
+async function getEmployeeDetails(empId) {
   const emp = await storage.findEmployee(empId)
-  if (!emp) return { exists: false, rows: [] }
+  if (!emp) return { exists: false, employee: null, shifts: [] }
 
   const assignments = await storage.getAssignmentsForEmployee(empId)
-  const rows = []
+  const shifts = []
 
   for (let i = 0; i < assignments.length; i++) {
     const shift = await storage.findShift(assignments[i].shiftId)
     if (shift) {
-      rows.push({
+      shifts.push({
         date: shift.date,
         startTime: shift.startTime,
-        endTime: shift.endTime
+        endTime: shift.endTime,
+        morning: shift.startTime < '12:00'
       })
     }
   }
 
-  return { exists: true, rows: rows }
+  for (let i = 0; i < shifts.length; i++) {
+    for (let j = 0; j < shifts.length - 1; j++) {
+      const a = shifts[j]
+      const b = shifts[j + 1]
+      if (a.date > b.date || (a.date === b.date && a.startTime > b.startTime)) {
+        const tmp = shifts[j]
+        shifts[j] = shifts[j + 1]
+        shifts[j + 1] = tmp
+      }
+    }
+  }
+
+  return { exists: true, employee: emp, shifts: shifts }
+}
+
+/**
+ * Updates an employee's name and phone after validation.
+ * @param {string} empId - The employee ID.
+ * @param {string} name - The new name.
+ * @param {string} phone - The new phone number.
+ * @returns {Promise<{ok: boolean, message?: string}>}
+ */
+async function updateEmployee(empId, name, phone) {
+  const emp = await storage.findEmployee(empId)
+  if (!emp) return { ok: false, message: 'Employee not found' }
+
+  const cleanName = String(name || '').trim()
+  const cleanPhone = String(phone || '').trim()
+
+  if (!cleanName) return { ok: false, message: 'Name must be non-empty' }
+
+  const phoneOk = /^[0-9]{4}-[0-9]{4}$/.test(cleanPhone)
+  if (!phoneOk) return { ok: false, message: 'Phone must be 4 digits, dash, 4 digits' }
+
+  await storage.updateEmployee(empId, cleanName, cleanPhone)
+  return { ok: true }
 }
 
 module.exports = {
   listEmployees,
   createEmployee,
-  getEmployeeSchedule,
-  computeShiftDuration
+  getEmployee,
+  getEmployeeDetails,
+  updateEmployee
 }
