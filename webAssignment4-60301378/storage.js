@@ -1,17 +1,12 @@
 const { setServers } = require('node:dns/promises')
-setServers(["1.1.1.1", "8.8.8.8"])
+setServers(['1.1.1.1', '8.8.8.8'])
 
-const { MongoClient } = require('mongodb')
+const crypto = require('crypto')
+const { MongoClient, ObjectId } = require('mongodb')
 
 const DB_NAME = 'infs3201_winter2026'
 let client = null
 
-/**
- * Establishes and returns a MongoDB database connection.
- * If a connection does not exist, it creates one.
- * @returns {Promise<import('mongodb').Db>} The MongoDB database instance.
- * @throws {Error} If MONGO_URI environment variable is missing.
- */
 async function getDb() {
   const uri = process.env.MONGO_URI
   if (!uri) throw new Error('Missing MONGO_URI env var')
@@ -24,68 +19,110 @@ async function getDb() {
   return client.db(DB_NAME)
 }
 
-/**
- * Retrieves all employees from the MongoDB collection.
- * @returns {Promise<Array<Object>>}
- */
+function toObjectId(id) {
+  if (!ObjectId.isValid(id)) return null
+  return new ObjectId(id)
+}
+
 async function getAllEmployees() {
   const db = await getDb()
   return await db.collection('employees').find({}).toArray()
 }
 
-/**
- * Finds an employee by employee ID.
- * @param {string} empId
- * @returns {Promise<Object|null>}
- */
 async function findEmployee(empId) {
   const db = await getDb()
-  return await db.collection('employees').findOne({ employeeId: empId })
+  const objectId = toObjectId(empId)
+  if (!objectId) return null
+
+  return await db.collection('employees').findOne({ _id: objectId })
 }
 
-/**
- * Inserts a new employee into the employees collection.
- * @param {Object} employee - The employee object to insert.
- * @returns {Promise<void>}
- */
 async function addEmployee(employee) {
   const db = await getDb()
   await db.collection('employees').insertOne(employee)
 }
 
-/**
- * Updates an existing employee's name and phone number.
- * @param {string} empId - The employee ID to update.
- * @param {string} name - The new employee name.
- * @param {string} phone - The new employee phone number.
- * @returns {Promise<void>}
- */
-async function updateEmployee(empId, name, phone) {
+async function updateEmployee(empId, name, phone, photoFilename) {
   const db = await getDb()
+  const objectId = toObjectId(empId)
+  if (!objectId) return
+
+  const updateDoc = {
+    name: name,
+    phone: phone
+  }
+
+  if (photoFilename !== undefined) {
+    updateDoc.photoFilename = photoFilename
+  }
+
   await db.collection('employees').updateOne(
-    { employeeId: empId },
-    { $set: { name: name, phone: phone } }
+    { _id: objectId },
+    { $set: updateDoc }
   )
 }
 
-/**
- * Finds a shift by its shift ID.
- * @param {string} shiftId - The shift ID to search for.
- * @returns {Promise<Object|null>} A promise that resolves to the shift object if found, otherwise null.
- */
-async function findShift(shiftId) {
+async function findShiftsForEmployee(empId) {
   const db = await getDb()
-  return await db.collection('shifts').findOne({ shiftId: shiftId })
+  const objectId = toObjectId(empId)
+  if (!objectId) return []
+
+  return await db.collection('shifts').find({
+    employees: objectId
+  }).toArray()
 }
 
-/**
- * Retrieves all shift assignments for a given employee.
- * @param {string} empId
- * @returns {Promise<Array<Object>>}
- */
-async function getAssignmentsForEmployee(empId) {
+async function findUserByUsername(username) {
   const db = await getDb()
-  return await db.collection('assignments').find({ employeeId: empId }).toArray()
+  return await db.collection('users').findOne({ username: username })
+}
+
+async function createSession(sessionId, username, expiresAt) {
+  const db = await getDb()
+  await db.collection('sessions').insertOne({
+    sessionId: sessionId,
+    username: username,
+    expiresAt: expiresAt
+  })
+}
+
+async function findSession(sessionId) {
+  const db = await getDb()
+  return await db.collection('sessions').findOne({ sessionId: sessionId })
+}
+
+async function extendSession(sessionId, expiresAt) {
+  const db = await getDb()
+  await db.collection('sessions').updateOne(
+    { sessionId: sessionId },
+    { $set: { expiresAt: expiresAt } }
+  )
+}
+
+async function deleteSession(sessionId) {
+  const db = await getDb()
+  await db.collection('sessions').deleteOne({ sessionId: sessionId })
+}
+
+async function deleteExpiredSessions() {
+  const db = await getDb()
+  await db.collection('sessions').deleteMany({
+    expiresAt: { $lt: new Date() }
+  })
+}
+
+async function addSecurityLog(username, url, method) {
+  const db = await getDb()
+  await db.collection('security_log').insertOne({
+    timestamp: new Date(),
+    username: username || '',
+    url: url,
+    method: method
+  })
+}
+
+function sha256(text) {
+  return crypto.createHash('sha256').update(text).digest('hex')
 }
 
 module.exports = {
@@ -93,6 +130,13 @@ module.exports = {
   findEmployee,
   addEmployee,
   updateEmployee,
-  findShift,
-  getAssignmentsForEmployee
+  findShiftsForEmployee,
+  findUserByUsername,
+  createSession,
+  findSession,
+  extendSession,
+  deleteSession,
+  deleteExpiredSessions,
+  addSecurityLog,
+  sha256
 }
