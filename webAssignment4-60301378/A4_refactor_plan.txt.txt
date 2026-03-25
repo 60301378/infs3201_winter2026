@@ -1,0 +1,125 @@
+Assignment 4 Refactor Plan
+
+Collections that will change
+
+1. employees
+- Remove employeeId field
+- Use MongoDB _id as the primary identifier
+- Add photoFilename field to store employee photo file names
+
+2. shifts
+- Remove shiftId field
+- Add employees array containing ObjectIds of employees assigned to the shift
+
+3. assignments
+- This collection will be removed
+- Relationships between employees and shifts will be embedded inside shifts.employees
+
+4. users (new collection)
+- Fields: username, passwordHash
+- Used for login authentication
+
+5. sessions (new collection)
+- Fields: sessionId, username, expiresAt
+- Used to manage user sessions
+
+6. security_log (new collection)
+- Fields: timestamp, username, url, method
+- Used to log all incoming requests
+
+--------------------------------------------------
+
+Persistence functions to modify or remove
+
+1. Modify findEmployee(empId)
+- Change lookup from employeeId string to MongoDB _id ObjectId
+
+2. Modify updateEmployee(empId, name, phone)
+- Use _id instead of employeeId
+
+3. Modify addEmployee(employee)
+- Stop generating employeeId values
+
+4. Remove findShift(shiftId)
+- shiftId is no longer used
+
+5. Remove getAssignmentsForEmployee(empId)
+- assignments collection will be deleted
+
+6. Add findShiftsForEmployee(empId)
+- Query shifts where employees array contains the employee ObjectId
+
+7. Add user/session/log functions
+- findUserByUsername
+- createSession
+- findSession
+- extendSession
+- deleteSession
+- deleteExpiredSessions
+- addSecurityLog
+
+--------------------------------------------------
+
+Business logic changes
+
+1. Remove makeNextEmployeeId()
+- No more E001-style IDs
+
+2. Update getEmployee() and getEmployeeDetails()
+- Accept MongoDB _id string
+- Convert to ObjectId before querying
+
+3. Update createEmployee()
+- Insert only name, phone, and optional photoFilename
+
+4. Update getEmployeeDetails()
+- Retrieve shifts directly using embedded employees array
+
+5. Add login validation logic
+- Compare hashed password with stored passwordHash
+
+6. Add session management logic
+- Create session on login
+- Extend session expiry on each request
+- Delete session on logout
+
+--------------------------------------------------
+
+Embedded array effects on updates
+
+1. Assigning an employee to a shift
+- Add employee ObjectId to shifts.employees array
+
+2. Removing an employee from a shift
+- Remove employee ObjectId from shifts.employees
+
+3. Viewing employee details
+- Query shifts collection using employees array
+
+4. Prevent duplicate assignments
+- Use $addToSet to avoid duplicate ObjectIds
+
+--------------------------------------------------
+
+Risks and complications
+
+1. Invalid ObjectId strings can cause errors
+- Must validate before converting
+
+2. Migration must run in correct order
+- Add employees array → embed data → remove old fields
+
+3. Duplicate assignments
+- Could lead to duplicate ObjectIds if not handled properly
+
+4. Session expiry
+- Must be refreshed on each request
+
+5. Route protection
+- Must ensure only logged-in users can access protected routes
+
+6. Security logging
+- Must log every request even if user is not authenticated
+
+7. Photo access
+- Must protect employee photos from direct public access
