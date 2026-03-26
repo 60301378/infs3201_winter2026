@@ -2,10 +2,20 @@
 
 <h1>Employee Details</h1>
 
+<p>Logged in as: {{username}}</p>
+<a href="/logout">Logout</a>
+
 <p>Name: {{employee.name}}</p>
 <p>Phone: {{employee.phone}}</p>
 
-<a href="/employee/{{employee.employeeId}}/edit">Edit Details</a>
+{{#if employee.photoFilename}}
+  <img src="/employee/{{employee._id}}/photo" alt="Employee photo" width="150">
+{{/if}}
+
+<br><br>
+
+<a href="/employee/{{employee._id}}/edit">Edit Details</a>
+
 <br><br>
 
 <h2>Shifts</h2>
