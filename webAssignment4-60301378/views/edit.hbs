@@ -2,13 +2,20 @@
 
 <h1>Edit</h1>
 
-<form method="POST" action="/employee/{{employee.employeeId}}/edit">
+<p>Logged in as: {{username}}</p>
+<a href="/logout">Logout</a>
+
+<form method="POST" action="/employee/{{employee._id}}/edit" enctype="multipart/form-data">
   <label>Name:</label>
   <input name="name" value="{{employee.name}}">
   <br>
 
   <label>Phone:</label>
   <input name="phone" value="{{employee.phone}}">
+  <br>
+
+  <label>Photo:</label>
+  <input type="file" name="photo" accept="image/*">
   <br>
 
   <button type="submit">Save</button>
