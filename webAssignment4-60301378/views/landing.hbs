@@ -6,10 +6,13 @@
   <p>{{msg}}</p>
 {{/if}}
 
+<p>Logged in as: {{username}}</p>
+<a href="/logout">Logout</a>
+
 <ul>
   {{#each employees}}
     <li>
-      <a href="/employee/{{this.employeeId}}">{{this.name}}</a>
+      <a href="/employee/{{this._id}}">{{this.name}}</a>
     </li>
   {{/each}}
 </ul>
