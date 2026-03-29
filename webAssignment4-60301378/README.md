@@ -12,7 +12,7 @@ $env:MONGO_URI="mongodb+srv://<username>:<password>@cluster0.4kmqmoh.mongodb.net
 node app.js
 
 4. Open in browser:
-http://localhost:8000
+http://localhost:3000
 
 ---
 
