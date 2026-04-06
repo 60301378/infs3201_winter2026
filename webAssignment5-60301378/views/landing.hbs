@@ -1,0 +1,18 @@
+<link rel="stylesheet" href="/styles.css">
+
+<h1>List of Employees</h1>
+
+{{#if msg}}
+  <p>{{msg}}</p>
+{{/if}}
+
+<p>Logged in as: {{username}}</p>
+<a href="/logout">Logout</a>
+
+<ul>
+  {{#each employees}}
+    <li>
+      <a href="/employee/{{this._id}}">{{this.name}}</a>
+    </li>
+  {{/each}}
+</ul>
